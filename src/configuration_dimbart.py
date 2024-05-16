@@ -105,7 +105,7 @@ class DiMBartConfig(PretrainedConfig):
         vocab_size=50265,
         max_position_embeddings=2048,
         pos_counters = [[3], [4]],
-        dim_max_position_embeddings = [2048, 200, 200],
+        dim_max_position_embeddings = [512, 120, 120],
         encoder_layers=12,
         encoder_ffn_dim=4096,
         encoder_attention_heads=16,

@@ -18,29 +18,31 @@ from configuration_dimbart import DiMBartConfig
 _CONFIG_FOR_DOC = "DiMBartConfig"
 
 
-class ExtraTuple(Tuple):
-    pass
-
+def pickl_lambda():
+        return 0
 
 class DimPositionalEmbedding(nn.Module):
     """
     This module learns n sets positional embeddings up to n fixed maximum sizes.
     """
 
-    def __init__(self, dim_counters, max_dim_lens, embeddings_d):
+    def __init__(self, dim_counters, max_dim_lens, embeddings_d, dropout = 0.1):
         super().__init__()
         
+        self.offset = 2
         self.embeddings_d = embeddings_d
         self.counter_dim = len(dim_counters)+1
         self.max_dim_lens = max_dim_lens
+        self.max_dim_lens[0] += self.offset
+        self.dropout = nn.Dropout(p=dropout/self.counter_dim)
         
         embeddings_list = []
         for i in range(len(max_dim_lens)):
-            embeddings_list.append(nn.Embedding(max_dim_lens[i], embeddings_d))
+            embeddings_list.append(nn.Embedding(self.max_dim_lens[i], self.embeddings_d))
         
         self.embeddings = nn.ModuleList(embeddings_list)
         
-        self.counter_keys = defaultdict(lambda: 0) 
+        self.counter_keys = defaultdict(pickl_lambda) 
         for i in range(self.counter_dim-1):
             for counter_key in dim_counters[i]:
                 self.counter_keys[counter_key] = i+1
@@ -48,34 +50,44 @@ class DimPositionalEmbedding(nn.Module):
                 
     def get_sequence_embeddings_map(self, input_ids:torch.Tensor, counters_state:List = None):
         seq_len = input_ids.shape[0]
-        embeddings_map = [[0 for i in range(seq_len)] for j in range(self.counter_dim)]
+        embeddings_map = [[self.max_dim_lens[j]-1 for i in range(seq_len)] for j in range(self.counter_dim)]
         
         if counters_state == None:
             counters = [0 for i in range(self.counter_dim)]
+            counters[0] = self.offset
         else:
             counters = counters_state
         
         for i, token in enumerate(input_ids):
+            
+            if int(token) == 1:
+                break
+            
             counter = self.counter_keys[int(token)]
             if(counters[counter] == self.max_dim_lens[counter]-1):
+                counter +=1
+                for j in range(counter):
+                    counters[j] = 0
                 if counter == len(counters):
                     break
-                counter +=1
+            
+            
             for j in range(counter):
                 counters[j] = 0
             counters[counter] += 1
             
             for j in range(self.counter_dim):
                 embeddings_map[j][i] = counters[j]
-            
-        return embeddings_map, counters
+                
+         
+        return embeddings_map, counters.copy()
     
     
     def get_embeddings_sum(self, index_lists:List):
-        embeddings_sum = torch.zeros(self.embeddings_d, device = self.embeddings[0].weight.device)
+        embeddings_sum = torch.zeros((len(index_lists[0]), self.embeddings_d), device = self.embeddings[0].weight.device)
         for i, index_list in enumerate(index_lists):
             partial_embedding = self.embeddings[i](torch.as_tensor(index_list, device = self.embeddings[0].weight.device))
-            embeddings_sum = torch.add(embeddings_sum, partial_embedding)
+            embeddings_sum = torch.add(embeddings_sum, self.dropout(partial_embedding))
         
         return embeddings_sum
     
@@ -127,6 +139,7 @@ class DiMBartDecoder(MBartPreTrainedModel):
             config.pos_counters,
             config.dim_max_position_embeddings,
             config.d_model,
+            config.dropout
         )
         
         self.layers = nn.ModuleList([MBartDecoderLayer(config) for _ in range(config.decoder_layers)])
@@ -265,7 +278,8 @@ class DiMBartDecoder(MBartPreTrainedModel):
             counters_states = past_key_values[0][0].counters_states
         else:
             counters_states = None
-        positions, counters_states = self.embed_positions(input, counters_states)
+            
+        positions, counters_states = self.embed_positions(input_ids, counters_states)
 
         hidden_states = inputs_embeds + positions.to(inputs_embeds.device)
         hidden_states = self.layernorm_embedding(hidden_states)
