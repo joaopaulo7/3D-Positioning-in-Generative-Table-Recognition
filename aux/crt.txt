@@ -1,0 +1,5 @@
+wget 
+
+mkdir anns anns/test anns/train anns/val
+
+
