@@ -1,5 +1,7 @@
 #! /usr/bin/bash
 
-./aux/get_data.sh
+cd aux
 
-python3 aux/Get_Models.py
+./get_data.sh
+
+python3 Get_Models.py
