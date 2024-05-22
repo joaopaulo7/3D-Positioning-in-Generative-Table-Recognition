@@ -133,7 +133,7 @@ class TabeleiroProcessor(DonutProcessor):
         while self.decode(seq[i]) != "</s>":
             if self.decode(seq[i] == "<table>"):
                 aux_table, i = self._token2table(seq, i+1)
-                self._crop_empty_left(aux_table)
+                #self._crop_empty_left(aux_table)
                 
                 self._define_spannings(aux_table)
                 
@@ -183,16 +183,19 @@ class TabeleiroProcessor(DonutProcessor):
             while True:
                 content, col_header, row_header = self._update_vals(cell, content, col_header, row_header)
                 
-                if(cell['span_type'][-4:-3] != '1'):
+                if(cell['span_type'][-4:-3] != '1') or len(table) <= i or len(table[i]) <= j:
                     break
                 j += 1
                 cell = table[i][j]
-                
-            if(cell['span_type'][-3:-2] != '1'):
+            
+            if(cell['span_type'][-3:-2] != '1'): #case it's the end of cell
                 break
             i += 1
             j = first_j
-            cell = table[i][j]
+            
+            if len(table) <= i or len(table[i]) <= j: #case the  sequence is broken
+                break
+            cell = table[i][j] # oiii =P
         
         return (i, j), content, col_header, row_header
 
