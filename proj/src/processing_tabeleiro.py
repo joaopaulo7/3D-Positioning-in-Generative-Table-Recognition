@@ -3,8 +3,8 @@ from transformers import DonutProcessor
 
 class TabeleiroProcessor(DonutProcessor):
     
-    def __init__(self, **kwargs):
-        super().__init__(kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.cell_types = ["<cell>", "<col_header>", "<row_header>", "<row_and_col_header>"]
         self.content_types = ["<content_row_and_col_header>", "<content_row_header>", "<content_col_header>", "<content>"]
 
@@ -62,11 +62,11 @@ class TabeleiroProcessor(DonutProcessor):
         return sequence
 
 
-    def _json2token(self, json):
+    def json2token(self, json):
         sequence = ""
         if('tables' in json):
             for table in json['tables']:
-                sequence += self._table2token(self, table)
+                sequence += self._table2token(table)
 
         return sequence
     
@@ -108,7 +108,7 @@ class TabeleiroProcessor(DonutProcessor):
     def _token2row(self, seq, i, row_id):
         cells = []
         while self.decode(seq[i]) not in ["<row>", "</s>", "<table>"]:
-            if self.decode(seq[i]) in cell_types:
+            if self.decode(seq[i]) in self.cell_types:
                 aux_cell, i = self._token2cell(seq, i+1, (row_id, len(cells)), self.decode(seq[i]))
                 cells.append(aux_cell)
             else:
@@ -128,16 +128,19 @@ class TabeleiroProcessor(DonutProcessor):
         return rows, i
 
 
-    def _token2ann(self, seq, i):
+    def token2ann(self, seq, i):
         tables = []
         while self.decode(seq[i]) != "</s>":
             if self.decode(seq[i] == "<table>"):
                 aux_table, i = self._token2table(seq, i+1)
                 self._crop_empty_left(aux_table)
+                
+                self._define_spannings(aux_table)
+                
                 tables.append(aux_table)
+                
             else:
                 i += 1
-            
         return {'tables': tables}
 
     #SEQ TO ANN AUX    
