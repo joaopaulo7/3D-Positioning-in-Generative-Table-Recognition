@@ -12,3 +12,4 @@ mkdir data/anns data/anns/train data/anns/test data/anns/val
 
 python3 Prep_Donut.py
 
+python3 Train_Processor.py
