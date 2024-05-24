@@ -1,0 +1,8 @@
+{
+    "outputs": [
+        "batch 0 loss: 0.01619667625427246",
+        "Epoch checkpointed: 1 \nEpoch's mean Loss: 8.36820455959865",
+        "batch 0 loss: 0.006994563102722168",
+        "Epoch checkpointed: 2 \nEpoch's mean Loss: 7.22462444835239"
+    ]
+}
