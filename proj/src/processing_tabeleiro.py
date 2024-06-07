@@ -183,9 +183,9 @@ class TabeleiroProcessor(DonutProcessor):
             while True:
                 content, col_header, row_header = self._update_vals(cell, content, col_header, row_header)
                 
+                j += 1
                 if(cell['span_type'][-4:-3] != '1') or len(table) <= i or len(table[i]) <= j:
                     break
-                j += 1
                 cell = table[i][j]
             
             if(cell['span_type'][-3:-2] != '1'): #case it's the end of cell

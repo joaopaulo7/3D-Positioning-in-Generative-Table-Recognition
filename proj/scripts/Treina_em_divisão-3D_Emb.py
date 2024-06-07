@@ -17,6 +17,8 @@ from PIL import Image
 from torchvision import transforms
 
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 ANN_PATH = '../../aux/data/anns/train/'
 IMAGE_PATH = '../../aux/data/imgs/train/'
 
@@ -102,7 +104,7 @@ class DonutTableDataset(Dataset):
 
 
 ## LOAD FILES
-json_list = os.listdir(ANN_PATH)[:500]
+json_list = os.listdir(ANN_PATH)
 
 aux_list = []
 
@@ -115,11 +117,11 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [640, 640]
-max_length = 960
+image_size = [900, 1200]
+max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
-processor = TabeleiroProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_TML_Processor8k")
+processor = TabeleiroProcessor.from_pretrained(PROCESSORS_PATH+"donut-base")
 processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
@@ -140,7 +142,7 @@ for i in range(2):
 cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell_type])[0] for cell_type in cell_types]
 row_tokens = [processor.tokenizer.convert_tokens_to_ids([row_type])[0] for row_type in ['<row>']]
 
-model = TabeleiroModel.from_pretrained("naver-clova-ix/donut-base",
+model = TabeleiroModel.from_pretrained(MODELS_PATH+"donut-base",
                                        from_donut=True,
                                        decoder_extra_config={"pos_counters":[cell_tokens, row_tokens]},
                                        donut_config = config,
@@ -156,21 +158,22 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffle=True)
 
 
 
 # TRAIN MODEL
-avg_size = 1000 #moving avg size
+avg_size = 100 #moving avg size
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+device = 'cuda:1' if torch.cuda.is_available() else 'cpu' 
+model = torch.nn.DataParallel(model, device_ids=range(1, 4))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//(27*4), gamma=(0.125)**(1/27))
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
 
 num_steps = 0   
 
-for epoch in range(0, 2):
+for epoch in range(0, 1):
     
     print("Epoch:", epoch+1)
     mean_loss = 0
@@ -186,36 +189,35 @@ for epoch in range(0, 2):
         outputs = model(pixel_values=pixel_values, labels=labels)
         
         
-        loss = outputs.loss
+        loss = torch.mean(outputs.loss)
         mean_loss += loss.item()   
         mean_smpl_loss += loss.item()
         
-        loss /= 4
         loss.backward()
         
-        if (i+1)%4 == 0 or i+1 == len(train_dataloader):
-            optimizer.step()
-            optimizer.zero_grad()
-            num_steps += 1
-            if num_steps%10000 == 0 :
-                model.save_pretrained("../../aux/models/by_step/model_3D-STEP_"+str(num_steps))
+        optimizer.step()
+        optimizer.zero_grad()
+        num_steps += 1
+        if num_steps%5000 == 0 :
+            model.module.save_pretrained("../../aux/models/by_step/model_3D-STEP_"+str(num_steps))
             
-            if  scheduler.get_last_lr()[0] > 7.5e-6:
-                scheduler.step() 
+        if scheduler.get_last_lr()[0] > 1e-5:
+            scheduler.step() 
                 
         if i % avg_size == 0:
             print(str(i) + " Loss: ", mean_smpl_loss/avg_size)
             write_msg("batch " + str(i) +" loss: "+ str(mean_smpl_loss/avg_size))
             mean_smpl_loss = 0 
-        
+       
+        #print(os.system("nvidia-smi"))
         
     
         
-    model.save_pretrained("../../aux/models/checkpoints/model_3D-checkpoint-epoch_"+str(epoch))
+    model.module.save_pretrained("../../aux/models/checkpoints/model_3D-checkpoint-epoch_"+str(epoch))
     print("Epoch's mean loss: ", mean_loss/len(train_dataloader))
     
     write_msg("Epoch checkpointed: " + str(epoch+1) +" \n"+
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.save_pretrained("../../aux/models/model-3D-2_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-3D-2_EPOCHS")
