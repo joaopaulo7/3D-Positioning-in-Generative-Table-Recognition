@@ -116,8 +116,8 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [640, 640]
-max_length = 750
+image_size = [900, 1200]
+max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
 processor = DonutProcessor.from_pretrained(PROCESSORS_PATH+"donut-base")
@@ -145,7 +145,7 @@ config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 config.encoder.image_size = image_size
 config.decoder.max_position_encoddings = 2048
 
-model = PosDonutModel.from_pretrained("naver-clova-ix/donut-base", config=config, ignore_mismatched_sizes=True)
+model = PosDonutModel.from_pretrained(MODELS_PATH+"donut-base", config=config, ignore_mismatched_sizes=True)
 model.decoder.resize_token_embeddings(len(processor.tokenizer))
 
 model.config.pad_token_id = processor.tokenizer.pad_token_id
@@ -157,15 +157,15 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffle=True)
 
 
 
 # TRAIN MODEL
 avg_size = 100 #moving avg size
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=[0])#range(1, 1))
+device = 'cuda:3' if torch.cuda.is_available() else 'cpu' 
+model = torch.nn.DataParallel(model, device_ids=range(3, 0, -1))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
