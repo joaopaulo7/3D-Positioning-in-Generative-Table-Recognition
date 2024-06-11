@@ -17,8 +17,6 @@ from PIL import Image
 from torchvision import transforms
 
 
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-
 ANN_PATH = '../../aux/data/anns/train/'
 IMAGE_PATH = '../../aux/data/imgs/train/'
 
@@ -166,7 +164,7 @@ train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffl
 avg_size = 100 #moving avg size
 
 device = 'cuda:1' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(1, 4))
+model = torch.nn.DistributedDataParallel(model, device_ids=range(1, 4))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
@@ -220,4 +218,4 @@ for epoch in range(0, 1):
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model-3D-2_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-3D-1_EPOCHS")
