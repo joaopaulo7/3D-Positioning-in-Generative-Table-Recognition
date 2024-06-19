@@ -27,14 +27,14 @@ MODELS_PATH = "../../aux/models/"
 IMG_FORMAT = '.png'
 
 
-with open("msg.json", 'w') as out:
+with open("msg_Pos.json", 'w') as out:
         json.dump({'outputs': []}, out, ensure_ascii=False, indent=4)
 
 def write_msg(msg):
-    with open("msg.json", encoding="utf-8") as f:
+    with open("msg_Pos.json", encoding="utf-8") as f:
         json_data = json.load(f)
     
-    with open("msg.json", 'w') as out:
+    with open("msg_Pos.json", 'w') as out:
         json_data['outputs'].append(msg)
         json.dump(json_data, out, ensure_ascii=False, indent=4)
 
@@ -77,7 +77,7 @@ class DonutTableDataset(Dataset):
         pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
         pixel_values = pixel_values.squeeze()
 
-        target_sequence = annotation+"</s>"
+        target_sequence = "<s>"+annotation+"</s>"
         
         input_ids = processor.tokenizer(
             target_sequence,
@@ -161,10 +161,10 @@ train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffl
 
 
 # TRAIN MODEL
-avg_size = 100 #moving avg size
+avg_size = 1000 #moving avg size
 
 device = 'cuda:3' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DistributedDataParallel(model, device_ids=range(3, 0, -1))
+model = torch.nn.DataParallel(model, device_ids=range(3, -1, -1))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))

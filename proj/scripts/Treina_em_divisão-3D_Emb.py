@@ -77,7 +77,7 @@ class DonutTableDataset(Dataset):
         #pixel_values = processor(image.convert("RGB"), return_tensors="pt").pixel_values.squeeze()
         pixel_values = pixel_values.squeeze()
         
-        target_sequence = processor.json2token(annotation)+"</s>"
+        target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
         input_ids = processor.tokenizer(
             target_sequence,
@@ -161,10 +161,11 @@ train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffl
 
 
 # TRAIN MODEL
-avg_size = 100 #moving avg size
+avg_size = 1000 #moving avg size
 
-device = 'cuda:1' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DistributedDataParallel(model, device_ids=range(1, 4))
+device = 'cuda:3' if torch.cuda.is_available() else 'cpu' 
+
+model = torch.nn.DataParallel(model, device_ids=range(3, 0, -1))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
