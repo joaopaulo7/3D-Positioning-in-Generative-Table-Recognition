@@ -115,8 +115,6 @@ import json
 with open('../../aux/data/anns/test/final_eval.json') as fp:
     annotations = json.load(fp)
 
-annotations  = {key: annotations[key] for key in list(annotations.keys())[:4]}
-
 test_set = DonutTableDataset(annotations, 4096)
 
 test_dataloader = DataLoader(test_set, batch_size=2, shuffle=True)
