@@ -92,7 +92,7 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1600,
+            max_length= 1500,
             early_stopping=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
@@ -116,7 +116,7 @@ with open('../../aux/data/anns/test/final_eval.json') as fp:
 
 test_set = DonutTableDataset(annotations, 4096)
 
-test_dataloader = DataLoader(test_set, batch_size=2, shuffle=True)
+test_dataloader = DataLoader(test_set, batch_size=16, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/Pos_Enc/"
