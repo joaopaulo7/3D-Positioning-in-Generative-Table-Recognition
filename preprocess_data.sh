@@ -10,12 +10,14 @@ cd aux
 
 #mv data/imgs/PubTabNet_2.0.0.jsonl data/
 
+unzip data/final_eval.zip  -d data/imgs/test
+
 echo "decompression done. Prepping data."
 
-mkdir data/anns data/anns/train data/anns/test data/anns/val
+#mkdir data/anns data/anns/train data/anns/test data/anns/val
 
-python3 Prep_Donut.py
+#python3 Prep_Donut.py
 
-echo "Prepping done. Training processors."
+#echo "Prepping done. Training processors."
 
-python3 Train_Processor.py
+#python3 Train_Processor.py
