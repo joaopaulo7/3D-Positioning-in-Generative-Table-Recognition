@@ -10,7 +10,7 @@ cd aux
 
 #mv data/imgs/PubTabNet_2.0.0.jsonl data/
 
-unzip data/final_eval.zip  -d data/imgs/test
+unzip data/final_eval.zip  -d data/imgs/final_eval
 
 echo "decompression done. Prepping data."
 
