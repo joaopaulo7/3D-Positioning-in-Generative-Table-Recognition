@@ -58,24 +58,30 @@ class DimPositionalEmbedding(nn.Module):
         else:
             counters = counters_state
         
-        for i, token in enumerate(input_ids):
+        for i, token in enumerate(input_ids.tolist()):
             
-            if int(token) == 1:
+            if token == 1:
                 break
             
-            counter = self.counter_keys[int(token)]
-            if(counters[counter] == self.max_dim_lens[counter]-1):
-                counter +=1
-                for j in range(counter):
-                    counters[j] = 0
-                if counter == len(counters):
-                    break
+            counter = self.counter_keys[token]
             
-            
-            for j in range(counter):
-                counters[j] = 0
             counters[counter] += 1
             
+            #zeroes counters down the hierarchy
+            for j in range(counter):
+                counters[j] = 0
+            
+            #makes sure no counter ins above limit.
+            carry = 0 
+            for j in range(counter, self.counter_dim):
+                if counters[j]+carry >= self.max_dim_lens[j]:
+                    counters[j] = 0
+                    carry = 1
+                else:
+                    counters[j] += carry
+                    carry = 0
+            
+            #sets map
             for j in range(self.counter_dim):
                 embeddings_map[j][i] = counters[j]
                 

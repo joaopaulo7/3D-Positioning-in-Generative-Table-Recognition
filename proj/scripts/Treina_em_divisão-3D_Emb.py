@@ -115,7 +115,7 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [900, 1200]
+image_size = [704, 704]
 max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
@@ -156,7 +156,7 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=15, num_workers=1, shuffle=True)
 
 
 
@@ -172,7 +172,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_datal
 
 num_steps = 0   
 
-for epoch in range(0, 1):
+for epoch in range(0, 3):
     
     print("Epoch:", epoch+1)
     mean_loss = 0
@@ -208,7 +208,7 @@ for epoch in range(0, 1):
             write_msg("batch " + str(i) +" loss: "+ str(mean_smpl_loss/avg_size))
             mean_smpl_loss = 0 
        
-        #print(os.system("nvidia-smi"))
+        print(os.system("nvidia-smi"))
         
     
         

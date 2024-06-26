@@ -117,7 +117,7 @@ with open('../../aux/data/anns/test/final_eval.json') as fp:
 
 test_set = DonutTableDataset(annotations, 4096)
 
-test_dataloader = DataLoader(test_set, batch_size=16, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=12, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/3D_Emb/"
