@@ -1,6 +1,7 @@
 from configuration_dimbart import DiMBartConfig
 from modeling_dimbart import DiMBartForCausalLM
 from transformers import DonutSwinModel, VisionEncoderDecoderModel
+from torch import bfloat16, float32
 
 class TabeleiroModel(VisionEncoderDecoderModel):
     
@@ -15,6 +16,7 @@ class TabeleiroModel(VisionEncoderDecoderModel):
             donut_model.config.decoder = dimbart_config
             final_model = TabeleiroModel(config= donut_model.config, encoder = donut_model.encoder, decoder = decoder)
             final_model.load_state_dict(state_dic, strict = False)
+            final_model.to(bfloat16 if donut_model.config.torch_dtype == 'bfloat16' else float32)
             return final_model
         else:
             encoder = DonutSwinModel.from_pretrained(path+'/donut_encoder')

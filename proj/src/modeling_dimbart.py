@@ -90,7 +90,11 @@ class DimPositionalEmbedding(nn.Module):
     
     
     def get_embeddings_sum(self, index_lists:List):
-        embeddings_sum = torch.zeros((len(index_lists[0]), self.embeddings_d), device = self.embeddings[0].weight.device)
+        embeddings_sum = torch.zeros((len(index_lists[0]),self.embeddings_d),
+                                     device = self.embeddings[0].weight.device,
+                                     dtype  = self.embeddings[0].weight.dtype)
+
+        
         for i, index_list in enumerate(index_lists):
             partial_embedding = self.embeddings[i](torch.as_tensor(index_list, device = self.embeddings[0].weight.device))
             embeddings_sum = torch.add(embeddings_sum, self.dropout(partial_embedding))
