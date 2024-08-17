@@ -75,7 +75,7 @@ class DonutTableDataset(Dataset):
         
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        pixel_values = pixel_values.squeeze().to(torch.bfloat16)
 
         target_sequence = "<s>"+annotation+"</s>"
         
@@ -115,11 +115,11 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [900, 1200]
+image_size = [640, 1280]
 max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
-processor = DonutProcessor.from_pretrained(PROCESSORS_PATH+"donut-base")
+processor = DonutProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_HTML_Processor8k")
 processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
@@ -132,8 +132,7 @@ new_tokens += ["<td ", ">"]
 for i in range(1, 11):
     new_tokens +=['colspan="'+str(i)+'"']
     new_tokens +=['rowspan="'+str(i)+'"']
-
-new_tokens += ["<i>", "</i>","<b>", "</b>", "<sup>", "</sup>", "<sub>", "</sub>"]
+    
 
 processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
 
@@ -143,6 +142,8 @@ config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 
 config.encoder.image_size = image_size
 config.decoder.max_position_encoddings = 2048
+config.torch_dtype = "bfloat16"
+
 
 model = PosDonutModel.from_pretrained(MODELS_PATH+"donut-base", config=config, ignore_mismatched_sizes=True)
 model.decoder.resize_token_embeddings(len(processor.tokenizer))

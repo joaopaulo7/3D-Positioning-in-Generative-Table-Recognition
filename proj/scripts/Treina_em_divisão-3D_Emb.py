@@ -75,7 +75,7 @@ class DonutTableDataset(Dataset):
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
         #pixel_values = processor(image.convert("RGB"), return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        pixel_values = pixel_values.squeeze().to(torch.bfloat16)
         
         target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
@@ -115,11 +115,11 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [667, 1280]
+image_size = [640, 1280]
 max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
-processor = TabeleiroProcessor.from_pretrained(PROCESSORS_PATH+"donut-base")
+processor = TabeleiroProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_TML_Processor8k")
 processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
