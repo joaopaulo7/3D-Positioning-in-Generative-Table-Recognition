@@ -115,7 +115,7 @@ json_list = aux_list
 
 #MODEL SPECS
 
-image_size = [704, 704]
+image_size = [667, 1280]
 max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
@@ -140,11 +140,12 @@ for i in range(2):
 cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell_type])[0] for cell_type in cell_types]
 row_tokens = [processor.tokenizer.convert_tokens_to_ids([row_type])[0] for row_type in ['<row>']]
 
+config.torch_dtype = "bfloat16"
+
 model = TabeleiroModel.from_pretrained(MODELS_PATH+"donut-base",
                                        from_donut=True,
                                        decoder_extra_config={"pos_counters":[cell_tokens, row_tokens]},
-                                       donut_config = config,
-                                       ignore_mismatched_sizes=True)
+                                       donut_config = config)
 model.decoder.resize_token_embeddings(len(processor.tokenizer))
 
 model.config.pad_token_id = processor.tokenizer.pad_token_id

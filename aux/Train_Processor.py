@@ -46,13 +46,10 @@ TML_processor.tokenizer = TML_processor.tokenizer.train_new_from_iterator(
     length = len(content_list),
     vocab_size = 8000,
     show_progress = True)
+    
 
-
-content_list = []
-for i, file_name in enumerate(tqdm(html_list)):
-    with open(ANN_PATH + SPLIT + file_name, encoding="utf-8") as f:
-        annotation = json.load(f)
-    content_list.append(annotation)
+TML_processor.save_pretrained("processors/Donut_PubTables_TML_Processor8k")
+    
 
 HTML_processor.tokenizer = HTML_processor.tokenizer.train_new_from_iterator(
     content_list,
@@ -61,5 +58,4 @@ HTML_processor.tokenizer = HTML_processor.tokenizer.train_new_from_iterator(
     show_progress = True)
 
 
-TML_processor.save_pretrained("processors/Donut_PubTables_TML_Processor8k")
 HTML_processor.save_pretrained("processors/Donut_PubTables_HTML_Processor8k")
