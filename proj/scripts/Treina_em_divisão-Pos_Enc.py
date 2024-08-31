@@ -75,7 +75,7 @@ class DonutTableDataset(Dataset):
         
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze().to(torch.bfloat16)
+        pixel_values = pixel_values.squeeze()
 
         target_sequence = "<s>"+annotation+"</s>"
         
@@ -141,8 +141,7 @@ processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
 config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 
 config.encoder.image_size = image_size
-config.decoder.max_position_encoddings = 2048
-config.torch_dtype = "bfloat16"
+config.decoder.max_position_encodings = 2048
 
 
 model = PosDonutModel.from_pretrained(MODELS_PATH+"donut-base", config=config, ignore_mismatched_sizes=True)
@@ -157,22 +156,22 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=1, shuffle=True)
 
 
 
 # TRAIN MODEL
-avg_size = 1000 #moving avg size
+avg_size = 400 #moving avg size
 
-device = 'cuda:3' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(3, -1, -1))
+device = 'cuda' if torch.cuda.is_available() else 'cpu' 
+model = torch.nn.DataParallel(model, device_ids=range(4))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
 
 num_steps = 0   
 
-for epoch in range(0, 1):
+for epoch in range(0, 3):
     
     print("Epoch:", epoch+1)
     mean_loss = 0
@@ -198,7 +197,7 @@ for epoch in range(0, 1):
         optimizer.zero_grad()
         num_steps += 1
         if num_steps%5000 == 0 :
-            model.module.save_pretrained("../../aux/models/by_step/model_Pos-STEP_"+str(num_steps))
+            model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:
             scheduler.step() 
@@ -219,4 +218,4 @@ for epoch in range(0, 1):
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model-Pos-1_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-Pos-3_EPOCHS")

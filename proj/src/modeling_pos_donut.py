@@ -34,7 +34,7 @@ class PosDonutModel(VisionEncoderDecoderModel):
 
     def from_pretrained(*args, **kwargs):
         model = super(VisionEncoderDecoderModel, VisionEncoderDecoderModel).from_pretrained(*args, **kwargs)
-        model.decoder.model.decoder.embed_positions = PositionalEncoding(kwargs["config"].decoder.max_position_encoddings,
+        model.decoder.model.decoder.embed_positions = PositionalEncoding(kwargs["config"].decoder.max_position_encodings,
                                                                         kwargs["config"].decoder.d_model)
         return model
         

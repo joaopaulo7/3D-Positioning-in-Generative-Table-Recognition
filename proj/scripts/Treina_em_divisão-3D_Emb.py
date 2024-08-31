@@ -75,7 +75,7 @@ class DonutTableDataset(Dataset):
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
         #pixel_values = processor(image.convert("RGB"), return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze().to(torch.bfloat16)
+        pixel_values = pixel_values.squeeze()
         
         target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
@@ -140,7 +140,6 @@ for i in range(2):
 cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell_type])[0] for cell_type in cell_types]
 row_tokens = [processor.tokenizer.convert_tokens_to_ids([row_type])[0] for row_type in ['<row>']]
 
-config.torch_dtype = "bfloat16"
 
 model = TabeleiroModel.from_pretrained(MODELS_PATH+"donut-base",
                                        from_donut=True,
@@ -157,22 +156,22 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=15, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=1, shuffle=True)
 
 
 
 # TRAIN MODEL
-avg_size = 1000 #moving avg size
+avg_size = 400 #moving avg size
 
-device = 'cuda:3' if torch.cuda.is_available() else 'cpu' 
+device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
-model = torch.nn.DataParallel(model, device_ids=range(3, 0, -1))
+model = torch.nn.DataParallel(model, device_ids=range(4))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//20, gamma=(0.125)**(1/10))
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
+
 
 num_steps = 0   
-
 for epoch in range(0, 3):
     
     print("Epoch:", epoch+1)
@@ -185,11 +184,11 @@ for epoch in range(0, 3):
         
         pixel_values = batch["pixel_values"]
         labels = batch["labels"]
-        
+
         outputs = model(pixel_values=pixel_values, labels=labels)
-        
-        
         loss = torch.mean(outputs.loss)
+
+
         mean_loss += loss.item()   
         mean_smpl_loss += loss.item()
         
@@ -209,7 +208,7 @@ for epoch in range(0, 3):
             write_msg("batch " + str(i) +" loss: "+ str(mean_smpl_loss/avg_size))
             mean_smpl_loss = 0 
        
-        print(os.system("nvidia-smi"))
+        #print(os.system("nvidia-smi"))
         
     
         
@@ -220,4 +219,4 @@ for epoch in range(0, 3):
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model-3D-1_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-3D-3_EPOCHS")
