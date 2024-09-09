@@ -91,7 +91,7 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1500,
+            max_length= 1600,
             early_stopping=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
@@ -117,7 +117,7 @@ with open('../../aux/data/anns/test/final_eval.json') as fp:
 
 test_set = DonutTableDataset(annotations, 4096)
 
-test_dataloader = DataLoader(test_set, batch_size=12, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=4, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/3D_Emb/"
@@ -125,12 +125,12 @@ models_dir = "../../aux/models/by_step/3D_Emb/"
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model-3D-1_EPOCHS", "../../aux/processors/donut-base"),
+                    ("../../aux/models/model-3D-1_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
 ]
 
 for model_path in model_paths:
     model_proc_pairs.append(
-                    (model_path, "../../aux/processors/donut-base")
+                    (model_path, "../../aux/processors/Donut_PubTables_TML_Processor8k")
     )
 
 for model_path, proc_path in model_proc_pairs:
