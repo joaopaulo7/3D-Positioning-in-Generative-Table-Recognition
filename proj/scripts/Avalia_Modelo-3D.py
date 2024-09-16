@@ -15,7 +15,7 @@ from modeling_tabeleiro import TabeleiroModel
 from processing_tabeleiro import TabeleiroProcessor
 
 
-IMG_PATH = "../../aux/data/imgs/final_eval/"
+IMG_PATH = "../../aux/data/imgs/val/"
 
 #Define dataset
 class DonutTableDataset(Dataset):
@@ -78,7 +78,7 @@ def eval_model(model, processor, dataloader):
     out_dics = {}
     sum_score = 0
 
-    device = 'cuda:3' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
     model.eval()
 
@@ -112,12 +112,21 @@ def eval_model(model, processor, dataloader):
 
 #Carrega o conjunto de dados
 import json
-with open('../../aux/data/anns/test/final_eval.json') as fp:
+with open('../../aux/data/anns/val/val_dic.json') as fp:
     annotations = json.load(fp)
+
+ann_subset = {}
+for i, key_val in enumerate(annotations.items()):
+    key, val = key_val
+    ann_subset[key] = val
+    if i > 500:
+        break
+
+annotations = ann_subset
 
 test_set = DonutTableDataset(annotations, 4096)
 
-test_dataloader = DataLoader(test_set, batch_size=4, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=2, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/3D_Emb/"
@@ -125,7 +134,7 @@ models_dir = "../../aux/models/by_step/3D_Emb/"
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model-3D-1_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
+                    ("../../aux/models/model-3D-3_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
 ]
 
 for model_path in model_paths:
@@ -139,5 +148,5 @@ for model_path, proc_path in model_proc_pairs:
     evals = eval_model(model, processor, test_dataloader)
 
     with open('../../aux/outputs/3D_Emb/'+model_path.split('/')[-1]+'-output.json','w') as out:
-        json.dump(evals, out)
+        json.dump(evals, out, ensure_ascii=False)
 
