@@ -156,7 +156,7 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=1, shuffle=True)
 
 
 
@@ -164,7 +164,7 @@ train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=1, shuff
 avg_size = 400 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(4))
+model = torch.nn.DataParallel(model, device_ids=range(1))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
@@ -193,9 +193,11 @@ for epoch in range(0, 3):
         
         loss.backward()
         
+        
         optimizer.step()
         optimizer.zero_grad()
         num_steps += 1
+        
         if num_steps%5000 == 0 :
             model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos-STEP_"+str(num_steps))
             

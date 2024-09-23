@@ -91,12 +91,12 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1600,
-            early_stopping=True,
+            max_length= 1500,
+            early_stopping=False,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 3,
+            num_beams= 1,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )
@@ -115,18 +115,11 @@ import json
 with open('../../aux/data/anns/val/val_dic.json') as fp:
     annotations = json.load(fp)
 
-ann_subset = {}
-for i, key_val in enumerate(annotations.items()):
-    key, val = key_val
-    ann_subset[key] = val
-    if i > 500:
-        break
 
-annotations = ann_subset
 
 test_set = DonutTableDataset(annotations, 4096)
 
-test_dataloader = DataLoader(test_set, batch_size=2, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=1, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/3D_Emb/"

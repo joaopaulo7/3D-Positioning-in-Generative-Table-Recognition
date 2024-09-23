@@ -15,7 +15,7 @@ from transformers import DonutProcessor
 from modeling_pos_donut import PosDonutModel
 
 
-IMG_PATH = "../../aux/data/imgs/final_eval/"
+IMG_PATH = "../../aux/data/imgs/val/"
 
 #Define dataset
 class DonutTableDataset(Dataset):
@@ -67,6 +67,17 @@ def load_model_n_processor(model_path, processor_path):
     processor.image_processor.size = model.encoder.config.image_size[::-1] # should be (width, height)
     processor.image_processor.do_align_long_axis = False
     
+    new_tokens  = ["<table_extraction>"]
+    new_tokens += ["<thead>", "</thead>", "<tbody>", "</tbody>"]
+    new_tokens += ["<tr>", "</tr>", "<td>", "</td>"]
+
+    new_tokens += ["<td ", ">"]
+    for i in range(1, 11):
+        new_tokens +=['colspan="'+str(i)+'"']
+        new_tokens +=['rowspan="'+str(i)+'"']
+    
+    processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
+    
     #Configura o modelo
     model.config.pad_token_id = processor.tokenizer.pad_token_id
     model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(["<table_extraction>"])[0]
@@ -79,7 +90,7 @@ def eval_model(model, processor, dataloader):
     out_dics = {}
     sum_score = 0
 
-    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
     model.eval()
 
@@ -93,17 +104,17 @@ def eval_model(model, processor, dataloader):
         outputs = model.generate(
             pixel_values,
             max_length= 1500,
-            early_stopping=True,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 3,
+            num_beams= 1,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )
 
         for sequence, filename in zip(outputs.sequences, filenames):
-            table_html = "<html><body><table>" + processor.decode(sequence) + "</table></body></html>"
+            table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
+            print(table_html)
             out_dics[filename] = table_html
     return out_dics
 
@@ -111,12 +122,12 @@ def eval_model(model, processor, dataloader):
 
 #Carrega o conjunto de dados
 import json
-with open('../../aux/data/anns/test/final_eval.json') as fp:
+with open('../../aux/data/anns/val/val_dic.json') as fp:
     annotations = json.load(fp)
 
-test_set = DonutTableDataset(annotations, 4096)
+test_set = DonutTableDataset(annotations, 2048)
 
-test_dataloader = DataLoader(test_set, batch_size=16, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=1, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/Pos_Enc/"
@@ -124,17 +135,19 @@ models_dir = "../../aux/models/by_step/Pos_Enc/"
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model-Pos-1_EPOCHS", "../../aux/processors/donut-base"),
+                    ("../../aux/models/by_step/Pos_Enc/model_Pos-STEP_30000", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
 ]
 
 for model_path in model_paths:
     model_proc_pairs.append(
-                    (model_path, "../../aux/processors/donut-base")
+                    (model_path, "../../aux/processors/Donut_PubTables_HTML_Processor8k")
     )
+
+
 
 for model_path, proc_path in model_proc_pairs:
     model, processor = load_model_n_processor(model_path, proc_path)
-
+    
     evals = eval_model(model, processor, test_dataloader)
 
     with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
