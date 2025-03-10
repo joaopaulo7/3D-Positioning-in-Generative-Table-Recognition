@@ -52,11 +52,17 @@ class DonutTableDataset(Dataset):
     ):            
         self.annotations = annotations
         
-        
         self.image_size = image_size
         self.max_length = max_length
         self.split = split
         self.ignore_id = ignore_id
+        self.transform = transforms.Compose([
+            v2.GaussianBlur(kernel_size=(1, 3), sigma=(0.1, 0.2)),
+            v2.ColorJitter(brightness=.1, hue=.2),
+            v2.RandomRotation(degrees=1, expand=True, interpolation=Image.BILINEAR, fill=(255,255,255)),
+            v2.JPEG((70, 100)),
+            v2.RandomPerspective(distortion_scale=0.03, p=0.3, interpolation=Image.BILINEAR, fill=(255,255,255))
+        ])
         
         
     def __len__(self):
@@ -70,12 +76,11 @@ class DonutTableDataset(Dataset):
         with open(ANN_PATH + file_name + "-HTML.json", encoding="utf-8") as f:
             annotation = json.load(f)
         
-        image = Image.open(IMAGE_PATH + file_name + IMG_FORMAT)
+        image = self.transform(Image.open(IMAGE_PATH + file_name + IMG_FORMAT).convert("RGB"))
         
         
         # inputs
-        pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        pixel_values = processor.image_processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
 
         target_sequence = "<s>"+annotation+"</s>"
         
@@ -156,15 +161,15 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=20, num_workers=8, shuffle=True)
 
 
 
 # TRAIN MODEL
-avg_size = 400 #moving avg size
+avg_size = 500 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(4))
+model = torch.nn.DataParallel(model, device_ids=range(1))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
@@ -198,8 +203,8 @@ for epoch in range(0, 3):
         optimizer.zero_grad()
         num_steps += 1
         
-        if num_steps%5000 == 0 :
-            model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos-STEP_"+str(num_steps))
+        if num_steps%12000 == 0 :
+            model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos_Enc-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:
             scheduler.step() 
@@ -213,11 +218,11 @@ for epoch in range(0, 3):
         
     
         
-    model.module.save_pretrained("../../aux/models/checkpoints/model_Pos-checkpoint-epoch_"+str(epoch))
+    model.module.save_pretrained("../../aux/models/checkpoints/model_Pos_Enc-checkpoint-epoch_"+str(epoch))
     print("Epoch's mean loss: ", mean_loss/len(train_dataloader))
     
     write_msg("Epoch checkpointed: " + str(epoch+1) +" \n"+
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model-Pos-3_EPOCHS")
+model.module.save_pretrained("../../aux/models/model_Pos_Enc-3_EPOCHS")

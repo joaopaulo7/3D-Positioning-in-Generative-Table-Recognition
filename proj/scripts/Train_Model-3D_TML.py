@@ -56,7 +56,13 @@ class DonutTableDataset(Dataset):
         self.max_length = max_length
         self.split = split
         self.ignore_id = ignore_id
-        
+        self.transform = transforms.Compose([
+            v2.GaussianBlur(kernel_size=(1, 3), sigma=(0.1, 0.2)),
+            v2.ColorJitter(brightness=.1, hue=.2),
+            v2.RandomRotation(degrees=1, expand=True, interpolation=Image.BILINEAR, fill=(255,255,255)),
+            v2.JPEG((70, 100)),
+            v2.RandomPerspective(distortion_scale=0.03, p=0.3, interpolation=Image.BILINEAR, fill=(255,255,255))
+        ])
         
     def __len__(self):
         return len(self.annotations)
@@ -69,13 +75,11 @@ class DonutTableDataset(Dataset):
         with open(ANN_PATH + file_name + ".json", encoding="utf-8") as f:
             annotation = json.load(f)
         
-        image = Image.open(IMAGE_PATH + file_name + IMG_FORMAT)
+        image = self.transform(Image.open(IMAGE_PATH + file_name + IMG_FORMAT).convert("RGB"))
         
         
         # inputs
-        pixel_values = processor(image.convert("RGB"), random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
-        #pixel_values = processor(image.convert("RGB"), return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        pixel_values = processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
         
         target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
@@ -156,12 +160,12 @@ train_dataset = DonutTableDataset(json_list,
                              max_length = max_length,
                              image_size = image_size)
 
-train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=1, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=20, num_workers=8, shuffle=True)
 
 
 
 # TRAIN MODEL
-avg_size = 400 #moving avg size
+avg_size = 500 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
@@ -197,8 +201,8 @@ for epoch in range(0, 3):
         optimizer.step()
         optimizer.zero_grad()
         num_steps += 1
-        if num_steps%5000 == 0 :
-            model.module.save_pretrained("../../aux/models/by_step/model_3D-STEP_"+str(num_steps))
+        if num_steps%12500 == 0 :
+            model.module.save_pretrained("../../aux/models/by_step/model_3D_TML-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:
             scheduler.step() 
@@ -212,11 +216,11 @@ for epoch in range(0, 3):
         
     
         
-    model.module.save_pretrained("../../aux/models/checkpoints/model_3D-checkpoint-epoch_"+str(epoch))
+    model.module.save_pretrained("../../aux/models/checkpoints/model_3D_TML-checkpoint-epoch_"+str(epoch))
     print("Epoch's mean loss: ", mean_loss/len(train_dataloader))
     
     write_msg("Epoch checkpointed: " + str(epoch+1) +" \n"+
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model-3D-3_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-3D_TML-3_EPOCHS")
