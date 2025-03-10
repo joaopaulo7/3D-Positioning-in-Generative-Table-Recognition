@@ -206,18 +206,23 @@ def json_to_html(line):
 
 
 
-
 from tqdm.auto import tqdm
+from multiprocessing import Pool
 
-with open("data/PubTabNet_2.0.0.jsonl", encoding="utf-8") as f:
-    for line in tqdm(f):
-        table, file, split = json_to_ann(line)
-        with open(DONUT_ANN_PATH[split] + file[:-4] +".json", 'w') as out:
-            json.dump({'tables': [table]}, out, ensure_ascii=False, indent=4)
+def prep_func(line):
+    table, file, split = json_to_ann(line)
+    with open(DONUT_ANN_PATH[split] + file[:-4] +".json", 'w') as out:
+        json.dump({'tables': [table]}, out, ensure_ascii=False, indent=4)
 
-        html = json_to_html(line)
-        with open(DONUT_ANN_PATH[split] + file[:-4] +"-HTML.json", 'w') as out:
-            json.dump(html, out, ensure_ascii=False, indent=4)
+    html = json_to_html(line)
+    with open(DONUT_ANN_PATH[split] + file[:-4] +"-HTML.json", 'w') as out:
+        json.dump(html, out, ensure_ascii=False, indent=4)
+
+
+
+with Pool(processes = 48) as pool:
+    with open("data/PubTabNet_2.0.0.jsonl", encoding="utf-8") as f:
+        pool.map(prep_func, f)
 
 
 

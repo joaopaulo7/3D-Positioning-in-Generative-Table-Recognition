@@ -5,17 +5,7 @@ class TabeleiroProcessor(DonutProcessor):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cell_types = ["<cell>", "<col_header>", "<row_header>", "<row_and_col_header>"]
-        self.content_types = ["<content_row_and_col_header>", "<content_row_header>", "<content_col_header>", "<content>"]
-
-        for i in range(2):
-            for j in range(2):
-                for k in range(2):
-                    self.cell_types.append("<span_type=0" + str(i) + str(j) + str(k) + ">")
-                    self.cell_types.append("<span_type=1" + str(i) + str(j) + str(k) + ">")
-        
-        self.tokenizer.add_tokens(["<table_extraction>", "<table>", "<row>"] + self.content_types + self.cell_types)
-    
+       
     
     #ANNOTATION TO SEQUENCE
     def _cel2token(self, cell):

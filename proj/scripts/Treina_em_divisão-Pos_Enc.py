@@ -164,7 +164,7 @@ train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=1, shuffl
 avg_size = 400 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(1))
+model = torch.nn.DataParallel(model, device_ids=range(4))
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
