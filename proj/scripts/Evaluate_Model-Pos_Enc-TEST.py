@@ -48,7 +48,7 @@ class DonutTableDataset(Dataset):
         
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=False, return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        
         
         encoding = dict(file_name = file_name,
                         pixel_values=pixel_values,
@@ -64,19 +64,7 @@ def load_model_n_processor(model_path, processor_path):
 
     #Carrega e configura o processador
     processor = DonutProcessor.from_pretrained(processor_path)
-    processor.image_processor.size = model.encoder.config.image_size[::-1] # should be (width, height)
-    processor.image_processor.do_align_long_axis = False
     
-    new_tokens  = ["<table_extraction>"]
-    new_tokens += ["<thead>", "</thead>", "<tbody>", "</tbody>"]
-    new_tokens += ["<tr>", "</tr>", "<td>", "</td>"]
-
-    new_tokens += ["<td ", ">"]
-    for i in range(1, 11):
-        new_tokens +=['colspan="'+str(i)+'"']
-        new_tokens +=['rowspan="'+str(i)+'"']
-    
-    processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
     
     #Configura o modelo
     model.config.pad_token_id = processor.tokenizer.pad_token_id
@@ -103,16 +91,15 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1500,
+            max_length= 1200,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 1,
+            num_beams= 3,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )
-        
-        
+
         for sequence, filename in zip(outputs.sequences, filenames):
             table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
             print(table_html)
@@ -128,7 +115,7 @@ with open('../../aux/data/anns/val/val_dic.json') as fp:
 
 test_set = DonutTableDataset(annotations, 2048)
 
-test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=1, num_workers=1, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/Pos_Enc/"
@@ -136,7 +123,7 @@ models_dir = "../../aux/models/by_step/Pos_Enc/"
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/by_step/Pos_Enc/model_Pos-STEP_30000", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
+                    ("../../aux/models/model_Pos_Enc-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
 ]
 
 for model_path in model_paths:
@@ -152,5 +139,5 @@ for model_path, proc_path in model_proc_pairs:
     evals = eval_model(model, processor, test_dataloader)
 
     with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
-        json.dump(evals, out)
+        json.dump(evals, out, ensure_ascii=False)
 

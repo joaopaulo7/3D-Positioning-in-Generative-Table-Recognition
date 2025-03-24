@@ -18,6 +18,8 @@ mkdir data/anns data/anns/train data/anns/test data/anns/val
 
 python3 Prep_Donut.py
 
+python3 Prep_Val.py
+
 echo "Prepping done. Training processors."
 
 python3 Train_Processor.py
