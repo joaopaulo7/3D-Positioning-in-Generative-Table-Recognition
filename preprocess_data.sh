@@ -24,6 +24,8 @@ echo "Prepping done. Training processors."
 
 python3 Train_Processor.py
 
-echo "Creating model directories"
+echo "Creating auxiliary directories"
 
 mkdir models/by_step/3D_TML models/by_step/3D_HTML models/by_step/Pos_Enc
+
+mkdir outputs/3D_TML outputs/3D_HTML outputs/Pos_Enc

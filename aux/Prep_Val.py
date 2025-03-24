@@ -29,7 +29,7 @@ def get_ann_dic(filename):
         return (image_file, {'html': annotation, 'type': t_type})
 
 
-with Pool(processes = 1) as pool:
+with Pool(processes = 12) as pool:
     res_dic_list = pool.map(get_ann_dic, html_list)
 
 

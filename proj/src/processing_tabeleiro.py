@@ -5,6 +5,13 @@ class TabeleiroProcessor(DonutProcessor):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.cell_types = ["<cell>", "<col_header>", "<row_header>", "<row_and_col_header>"]
+        self.content_types = ["<content_row_and_col_header>", "<content_row_header>", "<content_col_header>", "<content>"]
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    self.cell_types.append("<span_type=0" + str(i) + str(j) + str(k) + ">")
+                    self.cell_types.append("<span_type=1" + str(i) + str(j) + str(k) + ">")
        
     
     #ANNOTATION TO SEQUENCE
@@ -173,9 +180,10 @@ class TabeleiroProcessor(DonutProcessor):
             while True:
                 content, col_header, row_header = self._update_vals(cell, content, col_header, row_header)
                 
-                j += 1
-                if(cell['span_type'][-4:-3] != '1') or len(table) <= i or len(table[i]) <= j:
+                if(cell['span_type'][-4:-3] != '1') or len(table) <= i or len(table[i]) <= j+1:
                     break
+                else:
+                    j += 1
                 cell = table[i][j]
             
             if(cell['span_type'][-3:-2] != '1'): #case it's the end of cell

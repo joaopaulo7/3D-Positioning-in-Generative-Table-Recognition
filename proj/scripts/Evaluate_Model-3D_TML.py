@@ -25,16 +25,16 @@ class DonutTableDataset(Dataset):
         max_length,
         ignore_id = -100,
         prompt_end_token = None,
-    ):            
-        self.annotations_files = list(annotations.keys())
+    ):
+        self.annotations_files = list(annotations.keys())[:20]
         self.annotations = annotations
         
         self.max_length = max_length
-        self.ignore_id = ignore_id        
+        self.ignore_id = ignore_id
         
         
     def __len__(self):
-        return len(self.annotations)
+        return len(self.annotations_files)
     
     
     def __getitem__(self, idx):
@@ -101,7 +101,12 @@ def eval_model(model, processor, dataloader):
             )
 
         for sequence, filename in zip(outputs.sequences, filenames):
-            seq = torch.cat((sequence, torch.Tensor([2, 2]).int().to(device)), 0)
+            sequence = sequence.to('cpu')
+            try:
+                sequence = sequence[:sequence.tolist().index(processor.tokenizer.pad_token_id)]
+            except ValueError:
+                pass
+            seq = torch.cat((sequence, torch.Tensor([2, 2]).int()), 0)
             table = processor.token2ann(seq, 2)
             table_html = "<html><body><table>" + processor.table2html(table['tables'][0]) + "</table></body></html>"
             out_dics[filename] = table_html

@@ -30,11 +30,11 @@ class DonutTableDataset(Dataset):
         self.annotations = annotations
         
         self.max_length = max_length
-        self.ignore_id = ignore_id        
+        self.ignore_id = ignore_id
         
         
     def __len__(self):
-        return len(self.annotations)
+        return len(self.annotations_files)
     
     
     def __getitem__(self, idx):
@@ -64,7 +64,8 @@ def load_model_n_processor(model_path, processor_path):
 
     #Carrega e configura o processador
     processor = DonutProcessor.from_pretrained(processor_path)
-    
+    processor.image_processor.size = model.encoder.config.image_size[::-1] # should be (width, height)
+    processor.image_processor.do_align_long_axis = False
     
     #Configura o modelo
     model.config.pad_token_id = processor.tokenizer.pad_token_id
@@ -91,18 +92,22 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1200,
+            max_length= 2048,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 2,
+            num_beams= 3,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )
 
         for sequence, filename in zip(outputs.sequences, filenames):
+            try:
+                sequence = sequence[:sequence.tolist().index(processor.tokenizer.pad_token_id)]
+            except ValueError:
+                pass
+
             table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
-            print(table_html)
             out_dics[filename] = table_html
     return out_dics
 
@@ -115,7 +120,7 @@ with open('../../aux/data/anns/val/val_dic.json') as fp:
 
 test_set = DonutTableDataset(annotations, 2048)
 
-test_dataloader = DataLoader(test_set, batch_size=1, num_workers=1, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=8, num_workers=8, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/Pos_Enc/"
@@ -140,4 +145,3 @@ for model_path, proc_path in model_proc_pairs:
 
     with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
-
