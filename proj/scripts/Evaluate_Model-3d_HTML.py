@@ -137,6 +137,6 @@ for model_path, proc_path in model_proc_pairs:
     
     evals = eval_model(model, processor, test_dataloader)
 
-    with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
+    with open('../../aux/outputs/3d_HTML/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
 
