@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-
+from torchvision.transforms import v2
 
 
 ANN_PATH = '../../aux/data/anns/train/'
@@ -27,14 +27,14 @@ MODELS_PATH = "../../aux/models/"
 IMG_FORMAT = '.png'
 
 
-with open("msg_Pos.json", 'w') as out:
+with open("losses-Pos_Enc.json", 'w') as out:
         json.dump({'outputs': []}, out, ensure_ascii=False, indent=4)
 
 def write_msg(msg):
-    with open("msg_Pos.json", encoding="utf-8") as f:
+    with open("losses-Pos_Enc.json", encoding="utf-8") as f:
         json_data = json.load(f)
     
-    with open("msg_Pos.json", 'w') as out:
+    with open("losses-Pos_Enc.json", 'w') as out:
         json_data['outputs'].append(msg)
         json.dump(json_data, out, ensure_ascii=False, indent=4)
 
@@ -128,20 +128,6 @@ processor = DonutProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_HTML
 processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
-
-new_tokens  = ["<table_extraction>"]
-new_tokens += ["<thead>", "</thead>", "<tbody>", "</tbody>"]
-new_tokens += ["<tr>", "</tr>", "<td>", "</td>"]
-
-new_tokens += ["<td ", ">"]
-for i in range(1, 11):
-    new_tokens +=['colspan="'+str(i)+'"']
-    new_tokens +=['rowspan="'+str(i)+'"']
-    
-
-processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
-
-
 #CONFIG AND LOAD MODEL
 config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 
@@ -150,7 +136,7 @@ config.decoder.max_position_encodings = 2048
 
 
 model = PosDonutModel.from_pretrained(MODELS_PATH+"donut-base", config=config, ignore_mismatched_sizes=True)
-model.decoder.resize_token_embeddings(len(processor.tokenizer))
+model.decoder.resize_token_embeddings(8192)
 
 model.config.pad_token_id = processor.tokenizer.pad_token_id
 model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(["<table_extraction>"])[0]
@@ -169,7 +155,8 @@ train_dataloader = DataLoader(train_dataset, batch_size=20, num_workers=8, shuff
 avg_size = 500 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
-model = torch.nn.DataParallel(model, device_ids=range(1))
+model = torch.nn.DataParallel(model, device_ids=range(4))
+model.train()
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
@@ -188,7 +175,7 @@ for epoch in range(0, 3):
         
         pixel_values = batch["pixel_values"]
         labels = batch["labels"]
-        
+
         outputs = model(pixel_values=pixel_values, labels=labels)
         
         
@@ -203,7 +190,7 @@ for epoch in range(0, 3):
         optimizer.zero_grad()
         num_steps += 1
         
-        if num_steps%12000 == 0 :
+        if num_steps%12000 == 0 and num_steps > 0:
             model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos_Enc-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:

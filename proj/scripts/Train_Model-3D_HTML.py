@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
-
+from torchvision.transforms import v2
 
 
 ANN_PATH = '../../aux/data/anns/train/'
@@ -27,14 +27,14 @@ MODELS_PATH = "../../aux/models/"
 IMG_FORMAT = '.png'
 
 
-with open("msg_3D_HTML.json", 'w') as out:
+with open("losses-3D_HTML.json", 'w') as out:
         json.dump({'outputs': []}, out, ensure_ascii=False, indent=4)
 
 def write_msg(msg):
-    with open("msg_3D_HTML.json", encoding="utf-8") as f:
+    with open("losses-3D_HTML.json", encoding="utf-8") as f:
         json_data = json.load(f)
     
-    with open("msg_3D_HTML.json", 'w') as out:
+    with open("losses-3D_HTML.json", 'w') as out:
         json_data['outputs'].append(msg)
         json.dump(json_data, out, ensure_ascii=False, indent=4)
 
@@ -80,7 +80,7 @@ class DonutTableDataset(Dataset):
         
         
         # inputs
-        pixel_values = processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
+        pixel_values = processor.image_processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
 
         target_sequence = "<s>"+annotation+"</s>"
         
@@ -129,19 +129,6 @@ processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
 
-new_tokens  = ["<table_extraction>"]
-new_tokens += ["<thead>", "</thead>", "<tbody>", "</tbody>"]
-new_tokens += ["<tr>", "</tr>", "<td>", "</td>"]
-
-new_tokens += ["<td ", ">"]
-for i in range(1, 11):
-    new_tokens +=['colspan="'+str(i)+'"']
-    new_tokens +=['rowspan="'+str(i)+'"']
-    
-
-processor.tokenizer.add_tokens(new_tokens, special_tokens = False)
-
-
 #CONFIG AND LOAD MODEL
 config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 
@@ -157,7 +144,7 @@ model = TabeleiroModel.from_pretrained(MODELS_PATH+"donut-base",
                                        from_donut=True,
                                        decoder_extra_config={"pos_counters":[cell_tokens, row_tokens]},
                                        donut_config = config)
-model.decoder.resize_token_embeddings(len(processor.tokenizer))
+model.decoder.resize_token_embeddings(8192)
 
 model.config.pad_token_id = processor.tokenizer.pad_token_id
 model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(["<table_extraction>"])[0]
@@ -177,6 +164,7 @@ avg_size = 500 #moving avg size
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 model = torch.nn.DataParallel(model, device_ids=range(4))
+model.train()
 model.to(device) 
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
@@ -208,7 +196,7 @@ for epoch in range(0, 3):
         optimizer.step()
         optimizer.zero_grad()
         num_steps += 1
-        if num_steps%12000 == 0 :
+        if num_steps%12000 == 0 and num_steps > 0:
             model.module.save_pretrained("../../aux/models/by_step/3D_HTML/model_3D_HTML-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:

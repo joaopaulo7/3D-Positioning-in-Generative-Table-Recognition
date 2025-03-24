@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
+from torchvision.transforms import v2
 
 
 ANN_PATH = '../../aux/data/anns/train/'
@@ -26,14 +27,14 @@ MODELS_PATH = "../../aux/models/"
 IMG_FORMAT = '.png'
 
 
-with open("msg.json", 'w') as out:
+with open("losses-3D_TML.json", 'w') as out:
         json.dump({'outputs': []}, out, ensure_ascii=False, indent=4)
 
 def write_msg(msg):
-    with open("msg.json", encoding="utf-8") as f:
+    with open("losses-3D_TML.json", encoding="utf-8") as f:
         json_data = json.load(f)
     
-    with open("msg.json", 'w') as out:
+    with open("losses-3D_TML.json", 'w') as out:
         json_data['outputs'].append(msg)
         json.dump(json_data, out, ensure_ascii=False, indent=4)
 
@@ -79,7 +80,7 @@ class DonutTableDataset(Dataset):
         
         
         # inputs
-        pixel_values = processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
+        pixel_values = processor.image_processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
         
         target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
@@ -170,7 +171,8 @@ avg_size = 500 #moving avg size
 device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 model = torch.nn.DataParallel(model, device_ids=range(4))
-model.to(device) 
+model.train()
+model.to(device)
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
 
@@ -193,7 +195,7 @@ for epoch in range(0, 3):
         loss = torch.mean(outputs.loss)
 
 
-        mean_loss += loss.item()   
+        mean_loss += loss.item()
         mean_smpl_loss += loss.item()
         
         loss.backward()
@@ -201,8 +203,8 @@ for epoch in range(0, 3):
         optimizer.step()
         optimizer.zero_grad()
         num_steps += 1
-        if num_steps%12500 == 0 :
-            model.module.save_pretrained("../../aux/models/by_step/model_3D_TML-STEP_"+str(num_steps))
+        if num_steps%12000 == 0 and num_steps > 0:
+            model.module.save_pretrained("../../aux/models/by_step/3D_TML/model_3D_TML-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:
             scheduler.step() 

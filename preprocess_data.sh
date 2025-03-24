@@ -21,3 +21,7 @@ python3 Prep_Donut.py
 echo "Prepping done. Training processors."
 
 python3 Train_Processor.py
+
+echo "Creating model directories"
+
+mkdir models/by_step/3D_TML models/by_step/3D_HTML models/by_step/Pos_Enc
