@@ -112,11 +112,11 @@ def eval_model(model, processor, dataloader):
             return_dict_in_generate=True,
             )
         
-        print()
-        #for sequence, filename in zip(outputs.sequences, filenames):
-        #    table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
-        #    print(table_html)
-        #    out_dics[filename] = table_html
+        
+        for sequence, filename in zip(outputs.sequences, filenames):
+            table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
+            print(table_html)
+            out_dics[filename] = table_html
     return out_dics
 
 
@@ -128,7 +128,7 @@ with open('../../aux/data/anns/val/val_dic.json') as fp:
 
 test_set = DonutTableDataset(annotations, 2048)
 
-test_dataloader = DataLoader(test_set, batch_size=1, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/Pos_Enc/"

@@ -68,7 +68,7 @@ def load_func(file_name):
             content.append(cell['content'])
     return content
 
-with Pool(processes = 48) as pool:
+with Pool(processes = 8) as pool:
     start_time = time.time()
     res_content_list = pool.map(load_func, json_list)
 

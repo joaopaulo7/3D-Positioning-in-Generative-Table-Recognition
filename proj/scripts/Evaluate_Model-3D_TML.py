@@ -48,7 +48,7 @@ class DonutTableDataset(Dataset):
         
         # inputs
         pixel_values = processor(image.convert("RGB"), random_padding=False, return_tensors="pt").pixel_values.squeeze()
-        pixel_values = pixel_values.squeeze()
+        
         
         encoding = dict(file_name = file_name,
                         pixel_values=pixel_values,
@@ -91,12 +91,11 @@ def eval_model(model, processor, dataloader):
         # autoregressively generate sequence
         outputs = model.generate(
             pixel_values,
-            max_length= 1500,
-            early_stopping=False,
+            max_length= 2048,
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 1,
+            num_beams= 3,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )
@@ -115,31 +114,31 @@ import json
 with open('../../aux/data/anns/val/val_dic.json') as fp:
     annotations = json.load(fp)
 
+test_set = DonutTableDataset(annotations, 2048)
+
+test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
 
 
-test_set = DonutTableDataset(annotations, 4096)
-
-test_dataloader = DataLoader(test_set, batch_size=1, shuffle=False)
-
-
-models_dir = "../../aux/models/by_step/3D_Emb/"
+models_dir = "../../aux/models/by_step/3D_TML/"
 
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model-3D-3_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
+                    ("../../aux/models/model-3D_TML-3_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
 ]
 
 for model_path in model_paths:
     model_proc_pairs.append(
                     (model_path, "../../aux/processors/Donut_PubTables_TML_Processor8k")
     )
+    
+    
 
 for model_path, proc_path in model_proc_pairs:
     model, processor = load_model_n_processor(model_path, proc_path)
 
     evals = eval_model(model, processor, test_dataloader)
 
-    with open('../../aux/outputs/3D_Emb/'+model_path.split('/')[-1]+'-output.json','w') as out:
+    with open('../../aux/outputs/3D_TML/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
 

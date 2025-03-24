@@ -10,9 +10,9 @@ from torchvision import transforms
 
 
 sys.path.insert(0, '../src')
-from transformers import VisionEncoderDecoderConfig
 from transformers import DonutProcessor
-from modeling_pos_donut import PosDonutModel
+from modeling_tabeleiro import TabeleiroModel
+from processing_tabeleiro import TabeleiroProcessor
 
 
 IMG_PATH = "../../aux/data/imgs/val/"
@@ -58,15 +58,13 @@ class DonutTableDataset(Dataset):
 
 def load_model_n_processor(model_path, processor_path):
     
-    #Carrega modelo
-    config = VisionEncoderDecoderConfig.from_pretrained(model_path)
-    model = PosDonutModel.from_pretrained(model_path, config=config) 
+    #Carrega
+    model = TabeleiroModel.from_pretrained(model_path) 
 
     #Carrega e configura o processador
-    processor = DonutProcessor.from_pretrained(processor_path)
+    processor = TabeleiroProcessor.from_pretrained(processor_path)
     processor.image_processor.size = model.encoder.config.image_size[::-1] # should be (width, height)
     processor.image_processor.do_align_long_axis = False
-    
     
     #Configura o modelo
     model.config.pad_token_id = processor.tokenizer.pad_token_id
@@ -119,12 +117,12 @@ test_set = DonutTableDataset(annotations, 2048)
 test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
 
 
-models_dir = "../../aux/models/by_step/Pos_Enc/"
+models_dir = "../../aux/models/by_step/3D_HTML/"
 
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model_Pos_Enc-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
+                    ("../../aux/models/model-3D_HTML-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
 ]
 
 for model_path in model_paths:
@@ -139,6 +137,6 @@ for model_path, proc_path in model_proc_pairs:
     
     evals = eval_model(model, processor, test_dataloader)
 
-    with open('../../aux/outputs/3D_HTML/'+model_path.split('/')[-1]+'-output.json','w') as out:
+    with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
 
