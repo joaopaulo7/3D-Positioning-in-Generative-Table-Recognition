@@ -47,7 +47,7 @@ class DonutTableDataset(Dataset):
         
         
         # inputs
-        pixel_values = processor(image.convert("RGB"), random_padding=False, return_tensors="pt").pixel_values.squeeze()
+        pixel_values = processor.image_processor(image, random_padding=False, return_tensors="pt").pixel_values.squeeze()
         
         
         encoding = dict(file_name = file_name,
@@ -95,7 +95,7 @@ def eval_model(model, processor, dataloader):
             pad_token_id=processor.tokenizer.pad_token_id,
             eos_token_id=processor.tokenizer.eos_token_id,
             use_cache=True,
-            num_beams= 3,
+            num_beams= 2,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
             return_dict_in_generate=True,
             )

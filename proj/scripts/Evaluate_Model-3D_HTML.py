@@ -47,7 +47,7 @@ class DonutTableDataset(Dataset):
         
         
         # inputs
-        pixel_values = processor(image.convert("RGB"), random_padding=False, return_tensors="pt").pixel_values.squeeze()
+        pixel_values = processor.image_processor(image, random_padding=False, return_tensors="pt").pixel_values.squeeze()
         
         
         encoding = dict(file_name = file_name,
