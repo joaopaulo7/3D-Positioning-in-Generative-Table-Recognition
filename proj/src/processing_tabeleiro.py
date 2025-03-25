@@ -3,8 +3,11 @@ from transformers import DonutProcessor
 
 class TabeleiroProcessor(DonutProcessor):
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, crop_right = False, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.crop_right = crop_right
+        
         self.cell_types = ["<cell>", "<col_header>", "<row_header>", "<row_and_col_header>"]
         self.content_types = ["<content_row_and_col_header>", "<content_row_header>", "<content_col_header>", "<content>"]
         for i in range(2):
@@ -130,7 +133,9 @@ class TabeleiroProcessor(DonutProcessor):
         while self.decode(seq[i]) != "</s>":
             if self.decode(seq[i] == "<table>"):
                 aux_table, i = self._token2table(seq, i+1)
-                #self._crop_empty_left(aux_table)
+                
+                if self.crop_right:
+                    self._crop_empty_right(aux_table)
                 
                 self._define_spannings(aux_table)
                 
@@ -142,16 +147,16 @@ class TabeleiroProcessor(DonutProcessor):
 
     #SEQ TO ANN AUX    
 
-    def _crop_empty_left(self, table):
+    def _crop_empty_right(self, table):
         for row in table:
-            empty_left = []
+            empty_right = []
             for cell in row:
                 if(cell['content'] == "" and cell['colspan'] == 1):
-                    empty_left.append(cell)
+                    empty_right.append(cell)
                 else:
-                    empty_left.clear()
+                    empty_right.clear()
             
-            for cell in empty_left:
+            for cell in empty_right:
                 cell['colspan'] = 0
                 cell['rowspan'] = 0
 
