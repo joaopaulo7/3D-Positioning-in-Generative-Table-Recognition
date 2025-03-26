@@ -32,11 +32,10 @@ for output, output_dir, filename in outputs:
     scores_all = teds_all.batch_evaluate(output, gt)
     scores_struct = teds_struct.batch_evaluate(output, gt)
     
-    evaluations[output_dir+"-evals/"+filename+"-all.json"] = scores_all
-    evaluations[output_dir+"-evals/"+filename+"-struct.json"] = scores_struct
+    evaluations[output_dir+"/evals/"+filename+"-all.json"] = scores_all
+    evaluations[output_dir+"/evals/"+filename+"-struct.json"] = scores_struct
 
-for outputs_dir in outputs_dirs:
-    os.system("mkdir "+outputs_dir+"-evals")
+
 
 for path, scores in evaluations.items():
     with open(path, "w") as out_file:
