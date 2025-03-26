@@ -25,7 +25,7 @@ class DonutTableDataset(Dataset):
         max_length,
         ignore_id = -100,
         prompt_end_token = None,
-    ):            
+    ):
         self.annotations_files = list(annotations.keys())
         self.annotations = annotations
         
@@ -118,7 +118,7 @@ with open('../../aux/data/anns/val/val_dic.json') as fp:
 
 test_set = DonutTableDataset(annotations, 2048)
 
-test_dataloader = DataLoader(test_set, batch_size=8, num_workers=8, shuffle=False)
+test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
 
 
 models_dir = "../../aux/models/by_step/3D_HTML/"
@@ -141,6 +141,6 @@ for model_path, proc_path in model_proc_pairs:
     
     evals = eval_model(model, processor, test_dataloader)
 
-    with open('../../aux/outputs/3d_HTML/'+model_path.split('/')[-1]+'-output.json','w') as out:
+    with open('../../aux/outputs/3D_HTML/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
 

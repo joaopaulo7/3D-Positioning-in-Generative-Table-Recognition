@@ -26,7 +26,7 @@ class DonutTableDataset(Dataset):
         ignore_id = -100,
         prompt_end_token = None,
     ):
-        self.annotations_files = list(annotations.keys())[:20]
+        self.annotations_files = list(annotations.keys())
         self.annotations = annotations
         
         self.max_length = max_length
