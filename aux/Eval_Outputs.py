@@ -1,28 +1,30 @@
 import os
 import sys
 import json
+from multiprocessing import Pool
 
 sys.path.insert(0, 'PubTabNet/src')
 from metric import TEDS
 
 
-n_jobs = 8
-teds_all = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = False)
-teds_struct = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = True)
-
-with open("data/anns/test/final_eval.json") as in_file:
+with open("data/anns/val/val_dic.json") as in_file:
     gt = json.load(in_file)
 
 
-outputs_dirs = ["outputs/3D_Emb", "outputs/Pos_Enc"]
+outputs_dirs = ["outputs/3D_TML", "outputs/3D_HTML", "outputs/Pos_Enc"]
 outputs = []
 
-for output_dir in outputs_dirs:
-    json_list = os.listdir(output_dir)
+for outputs_dir in outputs_dirs:
+    json_list = os.listdir(outputs_dir)
     for json_file in json_list:
-        with open(output_dir+"/"+json_file) as in_file:
-            outputs.append((json.load(in_file), output_dir, json_file[:-5]))
+        with open(outputs_dir+"/"+json_file) as in_file:
+            outputs.append((json.load(in_file), outputs_dir, json_file[:-5]))
+            
 
+
+n_jobs = 48
+teds_all = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = False)
+teds_struct = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = True)
 
 evaluations = {}
 
