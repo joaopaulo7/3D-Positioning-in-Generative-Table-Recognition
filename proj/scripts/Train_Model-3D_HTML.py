@@ -136,7 +136,7 @@ config.encoder.image_size = image_size
 config.decoder.max_position_encodings = 2048
 
 
-cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell])[0] for cell in ['<td>', '<td']]
+cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell])[0] for cell in ['<td>', '<td ']]
 row_tokens = [processor.tokenizer.convert_tokens_to_ids([row_type])[0] for row_type in ['<tr>']]
 
 
