@@ -12,7 +12,7 @@ from torchvision import transforms
 sys.path.insert(0, '../src')
 from transformers import VisionEncoderDecoderConfig
 from modeling_pos_donut import PosDonutModel
-from transformers import DonutProcessor
+from processing_tabeleiro import TabeleiroProcessor
 
 
 IMG_PATH = "../../aux/data/imgs/val/"
@@ -25,7 +25,7 @@ class DonutTableDataset(Dataset):
         max_length,
         ignore_id = -100,
         prompt_end_token = None,
-    ):            
+    ):
         self.annotations_files = list(annotations.keys())
         self.annotations = annotations
         
@@ -58,12 +58,12 @@ class DonutTableDataset(Dataset):
 
 def load_model_n_processor(model_path, processor_path):
     
-    #Carrega modelo
+    #Carrega
     config = VisionEncoderDecoderConfig.from_pretrained(model_path)
     model = PosDonutModel.from_pretrained(model_path, config=config) 
 
     #Carrega e configura o processador
-    processor = DonutProcessor.from_pretrained(processor_path)
+    processor = TabeleiroProcessor.from_pretrained(processor_path)
     processor.image_processor.size = model.encoder.config.image_size[::-1] # should be (width, height)
     processor.image_processor.do_align_long_axis = False
     
@@ -103,11 +103,14 @@ def eval_model(model, processor, dataloader):
             )
 
         for sequence, filename in zip(outputs.sequences, filenames):
+            sequence = sequence.to('cpu')
             try:
                 sequence = sequence[:sequence.tolist().index(processor.tokenizer.pad_token_id)]
             except ValueError:
                 pass
-            table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
+            seq = torch.cat((sequence, torch.Tensor([2, 2]).int()), 0)
+            table = processor.token2ann(seq, 2)
+            table_html = "<html><body><table>" + processor.table2html(table['tables'][0]) + "</table></body></html>"
             out_dics[filename] = table_html
     return out_dics
 
@@ -123,26 +126,26 @@ test_set = DonutTableDataset(annotations, 2048)
 test_dataloader = DataLoader(test_set, batch_size=4, num_workers=4, shuffle=False)
 
 
-models_dir = "../../aux/models/by_step/Pos_Enc/"
+models_dir = "../../aux/models/by_step/Pos_TML/"
 
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
 model_proc_pairs = [
-                    ("../../aux/models/model_Pos_Enc-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
+                    ("../../aux/models/model-Pos_TML-3_EPOCHS", "../../aux/processors/Donut_PubTables_TML_Processor8k"),
 ]
 
 for model_path in model_paths:
     model_proc_pairs.append(
-                    (model_path, "../../aux/processors/Donut_PubTables_HTML_Processor8k")
+                    (model_path, "../../aux/processors/Donut_PubTables_TML_Processor8k")
     )
-
-
+    
+    
 
 for model_path, proc_path in model_proc_pairs:
     model, processor = load_model_n_processor(model_path, proc_path)
-    
+
     evals = eval_model(model, processor, test_dataloader)
 
-    with open('../../aux/outputs/Pos_Enc/'+model_path.split('/')[-1]+'-output.json','w') as out:
+    with open('../../aux/outputs/Pos_TML/'+model_path.split('/')[-1]+'-output.json','w') as out:
         json.dump(evals, out, ensure_ascii=False)
 

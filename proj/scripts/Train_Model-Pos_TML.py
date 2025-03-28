@@ -7,7 +7,7 @@ from transformers import VisionEncoderDecoderModel, VisionEncoderDecoderConfig
 
 sys.path.insert(0, '../src')
 from modeling_pos_donut import PosDonutModel
-from transformers import DonutProcessor
+from processing_tabeleiro import TabeleiroProcessor
 
 
 import torch
@@ -27,14 +27,14 @@ MODELS_PATH = "../../aux/models/"
 IMG_FORMAT = '.png'
 
 
-with open("losses-Pos_Enc.json", 'w') as out:
+with open("losses-Pos_TML.json", 'w') as out:
         json.dump({'outputs': []}, out, ensure_ascii=False, indent=4)
 
 def write_msg(msg):
-    with open("losses-Pos_Enc.json", encoding="utf-8") as f:
+    with open("losses-Pos_TML.json", encoding="utf-8") as f:
         json_data = json.load(f)
     
-    with open("losses-Pos_Enc.json", 'w') as out:
+    with open("losses-Pos_TML.json", 'w') as out:
         json_data['outputs'].append(msg)
         json.dump(json_data, out, ensure_ascii=False, indent=4)
 
@@ -52,6 +52,7 @@ class DonutTableDataset(Dataset):
     ):            
         self.annotations = annotations
         
+        
         self.image_size = image_size
         self.max_length = max_length
         self.split = split
@@ -64,7 +65,6 @@ class DonutTableDataset(Dataset):
             v2.RandomPerspective(distortion_scale=0.03, p=0.3, interpolation=Image.BILINEAR, fill=(255,255,255))
         ])
         
-        
     def __len__(self):
         return len(self.annotations)
     
@@ -73,7 +73,7 @@ class DonutTableDataset(Dataset):
         
         file_name = self.annotations[idx]
         
-        with open(ANN_PATH + file_name + "-HTML.json", encoding="utf-8") as f:
+        with open(ANN_PATH + file_name + ".json", encoding="utf-8") as f:
             annotation = json.load(f)
         
         image = self.transform(Image.open(IMAGE_PATH + file_name + IMG_FORMAT).convert("RGB"))
@@ -81,8 +81,8 @@ class DonutTableDataset(Dataset):
         
         # inputs
         pixel_values = processor.image_processor(image, random_padding=self.split == "train", return_tensors="pt").pixel_values.squeeze()
-
-        target_sequence = "<s>"+annotation+"</s>"
+        
+        target_sequence = "<s>"+processor.json2token(annotation)+"</s>"
         
         input_ids = processor.tokenizer(
             target_sequence,
@@ -101,7 +101,7 @@ class DonutTableDataset(Dataset):
         encoding = dict(pixel_values=pixel_values,
                         labels=labels,
                         target = target_sequence,
-                        filename = file_name)
+                       filename = file_name)
         
         return encoding
 
@@ -124,7 +124,7 @@ image_size = [640, 1280]
 max_length = 1500
 
 #CONFIG AND LOAD PROCESSOR
-processor = DonutProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_HTML_Processor8k")
+processor = TabeleiroProcessor.from_pretrained(PROCESSORS_PATH+"Donut_PubTables_TML_Processor8k")
 processor.image_processor.size = image_size[::-1] # should be (width, height)
 processor.image_processor.do_align_long_axis = False
 
@@ -135,9 +135,12 @@ config = VisionEncoderDecoderConfig.from_pretrained(MODELS_PATH+"donut-base")
 config.encoder.image_size = image_size
 config.decoder.max_position_encodings = 2048
 
+cell_tokens = [processor.tokenizer.convert_tokens_to_ids([cell_type])[0] for cell_type in processor.cell_types]
+row_tokens = [processor.tokenizer.convert_tokens_to_ids([row_type])[0] for row_type in ['<row>']]
+
 
 model = PosDonutModel.from_pretrained(MODELS_PATH+"donut-base", config=config, ignore_mismatched_sizes=True)
-model.decoder.resize_token_embeddings(8192)
+model.decoder.resize_token_embeddings(len(processor.tokenizer))
 
 model.config.pad_token_id = processor.tokenizer.pad_token_id
 model.config.decoder_start_token_id = processor.tokenizer.convert_tokens_to_ids(["<table_extraction>"])[0]
@@ -155,15 +158,15 @@ train_dataloader = DataLoader(train_dataset, batch_size=20, num_workers=8, shuff
 # TRAIN MODEL
 avg_size = 500 #moving avg size
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu' 
 
 model = torch.nn.DataParallel(model, device_ids=range(4))
 model.train()
-model.to(device) 
+model.to(device)
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=8e-5)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=len(train_dataloader)//10, gamma=(0.125)**(1/20))
 
-num_steps = 0   
+num_steps = 0
 
 for epoch in range(0, 3):
     
@@ -179,21 +182,19 @@ for epoch in range(0, 3):
         labels = batch["labels"]
 
         outputs = model(pixel_values=pixel_values, labels=labels)
-        
-        
         loss = torch.mean(outputs.loss)
-        mean_loss += loss.item()   
+
+
+        mean_loss += loss.item()
         mean_smpl_loss += loss.item()
         
         loss.backward()
         
-        
         optimizer.step()
         optimizer.zero_grad()
         num_steps += 1
-        
         if num_steps%12000 == 0 and num_steps > 0:
-            model.module.save_pretrained("../../aux/models/by_step/Pos_Enc/model_Pos_Enc-STEP_"+str(num_steps))
+            model.module.save_pretrained("../../aux/models/by_step/Pos_TML/model_Pos_TML-STEP_"+str(num_steps))
             
         if scheduler.get_last_lr()[0] > 1e-5:
             scheduler.step() 
@@ -207,11 +208,11 @@ for epoch in range(0, 3):
         
     
         
-    model.module.save_pretrained("../../aux/models/checkpoints/model_Pos_Enc-checkpoint-epoch_"+str(epoch))
+    model.module.save_pretrained("../../aux/models/checkpoints/model_Pos_TML-checkpoint-epoch_"+str(epoch))
     print("Epoch's mean loss: ", mean_loss/len(train_dataloader))
     
     write_msg("Epoch checkpointed: " + str(epoch+1) +" \n"+
               "Epoch's mean Loss: " + str(mean_loss/len(train_dataloader)))
  
               
-model.module.save_pretrained("../../aux/models/model_Pos_Enc-3_EPOCHS")
+model.module.save_pretrained("../../aux/models/model-Pos_TML-3_EPOCHS")

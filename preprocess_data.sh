@@ -26,8 +26,8 @@ python3 Train_Processor.py
 
 echo "Creating auxiliary directories"
 
-mkdir models/by_step/3D_TML models/by_step/3D_HTML models/by_step/Pos_Enc
+mkdir models/by_step/3D_TML models/by_step/3D_HTML models/by_step/Pos_Enc models/by_step/Pos_TML
 
-mkdir outputs/3D_TML outputs/3D_HTML outputs/Pos_Enc
+mkdir outputs/3D_TML outputs/3D_HTML outputs/Pos_Enc outputs/Pos_TML
 
-mkdir outputs/3D_TML/evals outputs/3D_HTML/evals outputs/Pos_Enc/evals
+mkdir outputs/3D_TML/evals outputs/3D_HTML/evals outputs/Pos_Enc/evals outputs/Pos_TML/evals

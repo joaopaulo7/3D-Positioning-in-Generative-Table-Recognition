@@ -10,7 +10,6 @@ from torchvision import transforms
 
 
 sys.path.insert(0, '../src')
-from transformers import DonutProcessor
 from modeling_tabeleiro import TabeleiroModel
 from processing_tabeleiro import TabeleiroProcessor
 
