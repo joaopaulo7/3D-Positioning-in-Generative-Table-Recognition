@@ -11,10 +11,10 @@ with open("data/anns/test/final_eval.json") as in_file:
     gt = json.load(in_file)
 
 
-output_file = "outputs/3D_TML/3D_TML-final_eval-output.json",
-eval_path   = "outputs/3D_TML/3D_TML-final_eval-score"
+output_file = "outputs/3D_TML/3D_TML-final_eval-output.json"
+eval_path   = "outputs/3D_TML/evals/3D_TML-final_eval"
 
-with open(outputs_dir+"/"+json_file) as in_file:
+with open(output_file) as in_file:
     output = json.load(in_file)
             
 

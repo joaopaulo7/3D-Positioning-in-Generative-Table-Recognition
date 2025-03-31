@@ -127,8 +127,10 @@ models_dir = "../../aux/models/by_step/Pos_Enc/"
 
 model_paths = [models_dir+model_path for model_path in os.listdir(models_dir)]
 
+model_paths.remove("../../aux/models/by_step/Pos_Enc/model_Pos_Enc-STEP_12000")
+
 model_proc_pairs = [
-                    ("../../aux/models/model_Pos_Enc-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
+                    #("../../aux/models/model_Pos_Enc-3_EPOCHS", "../../aux/processors/Donut_PubTables_HTML_Processor8k"),
 ]
 
 for model_path in model_paths:

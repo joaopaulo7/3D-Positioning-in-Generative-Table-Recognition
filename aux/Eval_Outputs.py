@@ -11,7 +11,7 @@ with open("data/anns/val/val_dic.json") as in_file:
     gt = json.load(in_file)
 
 
-outputs_dirs = ["outputs/3D_TML", "outputs/3D_HTML", "outputs/Pos_Enc"]
+outputs_dirs = ["outputs/3D_TML", "outputs/Pos_Enc"]
 outputs = []
 
 for outputs_dir in outputs_dirs:
@@ -22,9 +22,9 @@ for outputs_dir in outputs_dirs:
             
 
 
-n_jobs = 48
-teds_all = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = False)
-teds_struct = TEDS(n_jobs=n_jobs, ignore_nodes = "b", structure_only = True)
+n_jobs = 12
+teds_all = TEDS(n_jobs=n_jobs, structure_only = False)
+teds_struct = TEDS(n_jobs=n_jobs, structure_only = True)
 
 evaluations = {}
 
