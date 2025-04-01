@@ -11,7 +11,7 @@ with open("data/anns/val/val_dic.json") as in_file:
     gt = json.load(in_file)
 
 
-outputs_dirs = ["outputs/3D_TML", "outputs/Pos_Enc"]
+outputs_dirs = ['outputs/Pos_Enc'] #["outputs/3D_TML", "outputs/Pos_Enc"][1:]
 outputs = []
 
 for outputs_dir in outputs_dirs:
@@ -22,20 +22,21 @@ for outputs_dir in outputs_dirs:
             
 
 
-n_jobs = 12
+n_jobs = 48
 teds_all = TEDS(n_jobs=n_jobs, structure_only = False)
 teds_struct = TEDS(n_jobs=n_jobs, structure_only = True)
 
 evaluations = {}
 
 for output, output_dir, filename in outputs:
+    for file in output:
+        output[file] = output[file].replace('<td> ', '<td>')
     scores_all = teds_all.batch_evaluate(output, gt)
     scores_struct = teds_struct.batch_evaluate(output, gt)
     
     evaluations[output_dir+"/evals/"+filename+"-all.json"] = scores_all
     evaluations[output_dir+"/evals/"+filename+"-struct.json"] = scores_struct
-
-
+    
 
 for path, scores in evaluations.items():
     with open(path, "w") as out_file:

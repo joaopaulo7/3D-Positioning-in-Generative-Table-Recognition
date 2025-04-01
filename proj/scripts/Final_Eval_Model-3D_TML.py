@@ -128,6 +128,6 @@ model, processor = load_model_n_processor("../../aux/models/model-3D_TML-3_EPOCH
 
 evals = eval_model(model, processor, test_dataloader)
 
-with open('../../aux/outputs/3D_TML/3D_TML-final_eval-output.json,'w') as out:
+with open('../../aux/outputs/3D_TML/3D_TML-final_eval-output.json', 'w') as out:
     json.dump(evals, out, ensure_ascii=False)
 
