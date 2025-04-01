@@ -31,4 +31,4 @@ with open(eval_path+"-all.json", "w") as out_file:
 
 scores_struct = teds_struct.batch_evaluate(output, gt)
 with open(eval_path+"-struct.json", "w") as out_file:
-    json.dump(scores_all, out_file, indent=4)
+    json.dump(scores_struct, out_file, indent=4)

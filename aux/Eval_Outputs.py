@@ -11,7 +11,7 @@ with open("data/anns/val/val_dic.json") as in_file:
     gt = json.load(in_file)
 
 
-outputs_dirs = ['outputs/Pos_Enc'] #["outputs/3D_TML", "outputs/Pos_Enc"][1:]
+outputs_dirs = ["outputs/3D_TML", "outputs/Pos_Enc"]
 outputs = []
 
 for outputs_dir in outputs_dirs:
