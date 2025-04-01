@@ -108,7 +108,7 @@ def eval_model(model, processor, dataloader):
             except ValueError:
                 pass
             table_html = "<html><body><table>" + processor.decode(sequence[2:-1]) + "</table></body></html>"
-            out_dics[filename] = table_html
+            out_dics[filename] = table_html.replace('> ', '>')
     return out_dics
 
 
