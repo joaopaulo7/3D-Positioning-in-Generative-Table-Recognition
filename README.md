@@ -51,3 +51,32 @@ cd aux
 git clone https://github.com/ibm-aur-nlp/PubTabNet
 python3 Eval_Outputs.py
 ```
+
+---
+
+By the end, the scores will be saved in json format in the aux/outputs/<model_name>/evals directories.
+
+Scores are organized by training steps and type of evaluation(structure only or all):
+
+```bash
+aux/outputs/
+├── 3D_HTML
+├── 3D_TML
+│   └── evals
+│       ├── model_3D_TML-3_EPOCHS-output-all.json
+│       ├── model_3D_TML-3_EPOCHS-output-struct.json
+│       ├── model_3D_TML-STEP_12000-output-all.json
+│       ├── model_3D_TML-STEP_12000-output-struct.json
+│       ├── model_3D_TML-STEP_24000-output-all.json
+│       ├── model_3D_TML-STEP_24000-output-struct.json
+│       ├── model_3D_TML-STEP_36000-output-all.json
+│       ├── model_3D_TML-STEP_36000-output-struct.json
+│       ├── model_3D_TML-STEP_48000-output-all.json
+│       ├── model_3D_TML-STEP_48000-output-struct.json
+│       ├── model_3D_TML-STEP_60000-output-all.json
+│       ├── model_3D_TML-STEP_60000-output-struct.json
+│       ├── model_3D_TML-STEP_72000-output-all.json
+│       └── model_3D_TML-STEP_72000-output-struct.json
+│
+
+```
