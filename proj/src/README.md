@@ -1,6 +1,6 @@
 ## Copyright notice
 
-Some files in this directory contain external code and are subject to different licenses, whihc provided in each file.
+Some files in this directory contain external code and are subject to different licenses, which are provided in each file.
 
 Files with external code are:
 - **configuration_dimbart.py** and **modeling_dimbart.py** contain code from files available in: https://github.com/huggingface/transformers/tree/main/src/transformers/models/mbart
