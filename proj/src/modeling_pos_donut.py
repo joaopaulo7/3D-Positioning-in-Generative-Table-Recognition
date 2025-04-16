@@ -1,9 +1,3 @@
-from transformers import VisionEncoderDecoderModel
-import torch
-from torch import nn, Tensor
-import math
-
-
 # part of the __init__() code sourced from now deleted pytorch tutorial available in:
 #   https://github.com/pytorch/tutorials/blob/57bad606c011a83607a16a5bb89a652b90d7a307/beginner_source/transformer_tutorial.py#L114
 # under the following license:
@@ -35,6 +29,11 @@ import math
 #CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 #OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from transformers import VisionEncoderDecoderModel
+import torch
+from torch import nn, Tensor
+import math
     
 class PositionalEncoding(nn.Module):
 
