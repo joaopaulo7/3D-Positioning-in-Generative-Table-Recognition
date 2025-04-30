@@ -1,82 +1,94 @@
-## This is the repository for the paper Evaluating Three-Dimensional Topological Positioning in Generative Table Recognition
+# 3D Topological Positioning in Generative Table Recognition
 
----
+![GitHub](https://img.shields.io/badge/license-MIT-blue)
 
-This repository goal is to allow other researchers to replicate our results. The following steps show how one could do just that.
+This repository contains the implementation and evaluation code for our paper **"Evaluating Three-Dimensional Topological Positioning in Generative Table Recognition"**. It enables researchers to replicate our experiments and results.
 
----
 
-To train and evaluate models, you must first download web and preprocess data. Then, create axuliary directories and train new tokenizers.
-In linux that can be done atomatically by calling two of the provided scripts:
+## ⚙️ Requirements
+- Linux environment
+- 4+ GPUs with 32GB+ VRAM (for training)
+- 1 GPU with 32GB+ VRAM (for evaluation)
+- Python 3.11+
+
+## 🛠️ Setup Instructions
+
+### 1. Download and Preprocess Data
+Run the following scripts to download and preprocess the data:
+
 ```bash
 ./get_web_data.sh
 ./preprocess_data.sh
 ```
+The preprocessing script will automatically train tokenizers and set up the required directory structure.
 
----
+## 🚀 Training Models
 
-Next, to train models, run the training script, dependeing on which model you are currently working with. All of them require at least 4 GPUs with 32GB+ VRAM:
+Navigate to the scripts directory and run the appropriate training script:
+
 ```bash
-cd proj/sripts
-# depending on which one you want to train
-python3 Train_Model-3D_TML.py
-# or
-python3 Train_Model-Pos_HTML.py
-# or
-python3 Train_Model-3D_HTML.py
-# or 
-python3 Train_Model-Pos_TML.py
+cd proj/scripts
+# Choose one or more of the following based on your model of interest
+python3 Train_Model-3D_TML.py      # 3D Emb. TML model
+python3 Train_Model-Pos_HTML.py    # Pos. Enc. HTML model
+python3 Train_Model-3D_HTML.py     # 3D Emb. HTML model
+python3 Train_Model-Pos_TML.py     # Pos. Enc. TML model
 ```
 
-To generate validation set ouputs, run the evaluation script, dependeing on which model you are currently working with. All of them require at least one GPU with 32GB+ VRAM:
+**Note:** All training scripts require at least 4 GPUs with 32GB+ VRAM.
+
+## 📊 Evaluation
+
+### 1. Generate Model Outputs
+Run the corresponding evaluation script:
+
 ```bash
-cd proj/sripts
-# depending on which one you want to train
-python3 Evaluate_Model-3D_TML.py
-# or
-python3 Evaluate_Model-Pos_HTML.py
-# or
-python3 Evaluate_Model-3D_HTML.py
-# or 
-python3 Evaluate_Model-Pos_TML.py
+cd proj/scripts
+# Choose the appropriate evaluation scripts
+python3 Evaluate_Model-3D_TML.py      # 3D Emb. TML model
+python3 Evaluate_Model-Pos_HTML.py    # Pos. Enc. HTML model
+python3 Evaluate_Model-3D_HTML.py     # 3D Emb. HTML model
+python3 Evaluate_Model-Pos_TML.py     # Pos. Enc. TML model
 ```
 
----
+**Note:** Evaluation requires at least 1 GPU with 32GB+ VRAM.
 
-Finally, to evaluate outputs by Tree Edit Distance Score (TEDS):
+Evaluation outputs are saved in JSON format in the `aux/outputs/` directory, organized by model and number of training steps:
+```
+aux/outputs/
+├── [model_name]/
+│   ├── [model]-[step]-output.json 
+...
+```
 
-You must first clone [PubTabNet's repository](https://github.com/ibm-aur-nlp/PubTabNet) to aux and then run evaluation script
+### 2. TEDS Evaluation
+To compute Tree Edit Distance Scores, clone PubTabNet's, for the TEDS script, repository and run the evaluation:
+
 ```bash
 cd aux
 git clone https://github.com/ibm-aur-nlp/PubTabNet
 python3 Eval_Outputs.py
 ```
+**Note:** The Eval_Outputs.py script will automatically produce the scores for all files the generated in the previous step.
 
----
+## 📂 Results
 
-By the end, the scores will be saved in json format in the aux/outputs/<model_name>/evals directories.
-
-Scores are organized by training steps and type of evaluation(structure only or all):
-
-```bash
+Evaluation scores are saved in JSON format under:
+```
 aux/outputs/
-├── 3D_HTML
-├── 3D_TML
-│   └── evals
-│       ├── model_3D_TML-3_EPOCHS-output-all.json
-│       ├── model_3D_TML-3_EPOCHS-output-struct.json
-│       ├── model_3D_TML-STEP_12000-output-all.json
-│       ├── model_3D_TML-STEP_12000-output-struct.json
-│       ├── model_3D_TML-STEP_24000-output-all.json
-│       ├── model_3D_TML-STEP_24000-output-struct.json
-│       ├── model_3D_TML-STEP_36000-output-all.json
-│       ├── model_3D_TML-STEP_36000-output-struct.json
-│       ├── model_3D_TML-STEP_48000-output-all.json
-│       ├── model_3D_TML-STEP_48000-output-struct.json
-│       ├── model_3D_TML-STEP_60000-output-all.json
-│       ├── model_3D_TML-STEP_60000-output-struct.json
-│       ├── model_3D_TML-STEP_72000-output-all.json
-│       └── model_3D_TML-STEP_72000-output-struct.json
-│
+├── [model_name]/
+│   └── evals/
+│       ├── [model]-[step]-output-all.json       # Complete evaluation
+│       └── [model]-[step]-output-struct.json    # Structure-only evaluation
+│       ...
+...
+```
 
+Example structure:
+```
+aux/outputs/3D_TML/evals/
+├── model_3D_TML-STEP_12000-output-all.json
+├── model_3D_TML-STEP_12000-output-struct.json
+├── ...
+└── model_3D_TML-3_EPOCHS-output-struct.json
 ```
