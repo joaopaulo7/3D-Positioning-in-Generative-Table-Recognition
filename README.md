@@ -1,6 +1,6 @@
 # 3D Topological Positioning in Generative Table Recognition
 
-![GitHub](https://img.shields.io/badge/license-MIT-blue)
+![GitHub](https://img.shields.io/badge/license-MIT-blue) ![GitHub top language](https://img.shields.io/github/languages/top/joaopaulo7/3D-Positioning-in-Generative-Table-Recognition)
 
 This repository contains the implementation and evaluation code for our paper **"Evaluating Three-Dimensional Topological Positioning in Generative Table Recognition"**. It enables researchers to replicate our experiments and results.
 
