@@ -4,6 +4,8 @@
 
 This repository contains the implementation and evaluation code for our paper **"Evaluating Three-Dimensional Topological Positioning in Generative Table Recognition"**. It enables researchers to replicate our experiments and results.
 
+![Screenshot from 2025-05-14 10-16-33](https://github.com/user-attachments/assets/91511f71-004e-4e5b-97c6-4855e7e1d618)
+
 
 ## ⚙️ Requirements
 - Linux environment
